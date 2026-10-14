@@ -1,0 +1,19 @@
+# Supabase only (no app). Used together with docker-compose.yml by `sh install.sh --supabase-only`,
+# which writes COMPOSE_FILE into .env so every later `docker compose ...` picks this file up too.
+#
+# - the app service is kept out of the default start (it only runs with `--profile app`);
+# - the project's Docker network gets a fixed name (SUPABASE_NETWORK, sho-supabase by default) and
+#   the database a unique name on it (<name>-db), so an app can join that network and reach the
+#   database with no published port. Pick another name for a second stack on the same server.
+services:
+  app:
+    profiles: ["app"]
+  db:
+    networks:
+      default:
+        aliases:
+          - ${SUPABASE_NETWORK:-sho-supabase}-db
+
+networks:
+  default:
+    name: ${SUPABASE_NETWORK:-sho-supabase}

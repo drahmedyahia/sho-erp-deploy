@@ -1,0 +1,10 @@
+# أسرار وبيانات حيّة: لا تدخل git أبدًا.
+.env
+.env.old
+volumes/db/data
+volumes/storage
+volumes/snippets
+backups
+
+# القالب وحده يُتتبَّع (المستودع الجذري يتجاهل .env.* عمومًا).
+!.env.example

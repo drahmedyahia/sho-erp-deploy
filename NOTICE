@@ -1,0 +1,11 @@
+This directory contains files derived from the Supabase self-hosted Docker
+distribution (https://github.com/supabase/supabase, docker/ at tag
+self-hosted/v0.8.0), licensed under the Apache License 2.0 (see
+LICENSE-supabase). volumes/db/*.sql, utils/generate-keys.sh and volumes/api/envoy/*
+(except cds.yaml) are vendored unmodified. volumes/api/envoy/cds.yaml has ONE deliberate
+change: `dns_lookup_family: V4_ONLY` on every cluster, because Envoy's resolver failed
+against Docker's embedded DNS on Synology DSM without it (every upstream stayed empty
+and the gateway answered 503). Re-apply it when updating that file.
+docker-compose.yml is an excerpt of the upstream
+compose file (services not used by Sho-ERP removed). No Supabase service source
+code is included: only container configuration that pulls official images.

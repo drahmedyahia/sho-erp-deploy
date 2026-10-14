@@ -1,0 +1,390 @@
+# Sho-ERP — حزمة النشر الكاملة (التطبيق + خدمات Supabase التي يحتاجها فقط).
+#
+# مقتطعة من docker-compose الرسمي لـ Supabase (self-hosted v0.8.0، Apache-2.0)
+# بالصور والإصدارات نفسها. المحذوف عمدًا لأن التطبيق لا يستعمله (مُثبَت بالفحص
+# في docs/DEPLOY.md): edge-functions, imgproxy, supavisor, analytics, vector.
+# Studio وpostgres-meta (لوحة إدارة القاعدة) اختياريان: `--profile admin`.
+#
+# الاستعمال:
+#   sh install.sh                          # أول مرة: يولّد الأسرار ويشغّل كل شيء
+#   docker compose up -d --wait            # تشغيل
+#   docker compose --profile admin up -d   # + لوحة Studio (للمسؤول فقط)
+#   docker compose down                    # إيقاف (البيانات تبقى)
+#
+# لا تضع أسرارًا هنا: كلها في `.env` (غير مُتتبَّع في git). انظر .env.example.
+
+name: sho-erp
+
+services:
+  # ── التطبيق ────────────────────────────────────────────────────────────────
+  app:
+    image: ${APP_IMAGE:-ghcr.io/drahmedyahia/sho-erp-release:latest}
+    restart: unless-stopped
+    # The app creates the first administrator through the Auth API on a fresh
+    # install, so it should start only once auth and rest are healthy (the
+    # gateway being up is not enough).
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      rest:
+        condition: service_healthy
+      api-gw:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      # العنوان العام الذي يستعمله المتصفح للوصول إلى Supabase.
+      SUPABASE_URL: ${SUPABASE_PUBLIC_URL}
+      # اتصالات الخادم نفسه بـSupabase تذهب مباشرة داخل شبكة Docker (لا عبر العنوان
+      # العام، الذي قد لا تصل إليه الحاوية خلف وكيل/جدار)، بينما يبقى المتصفح
+      # والروابط الموقّعة على SUPABASE_URL العام.
+      SUPABASE_INTERNAL_URL: ${SUPABASE_INTERNAL_URL:-http://api-gw:8000}
+      SUPABASE_PUBLISHABLE_KEY: ${ANON_KEY}
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      # اتصال مباشر بالقاعدة داخل الشبكة (للمثبّت وفحوص المراقبة) — لا عبر pooler.
+      SUPABASE_DB_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}
+      # شاشة /setup معطّلة (الإعداد جاء من هنا). اتركه فارغًا.
+      SETUP_TOKEN: ""
+      INSTALL_ON_BOOT: "block"
+      INSTALL_RETRY_COOLDOWN_MS: "60000"
+      INSTALL_SCREEN_GRACE_MS: "1200"
+      INSTALL_STATUS_TOKEN: ${INSTALL_STATUS_TOKEN:-}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+    volumes:
+      # مجلد مسمّى (لا مجلد على المضيف) فتُنشأ ملكيته صحيحة للمستخدم app تلقائيًا.
+      - app-data:/app/data
+    ports:
+      - ${APP_BIND:-0.0.0.0}:${APP_PORT:-3000}:3000
+
+  # ── بوابة API (Envoy) ─────────────────────────────────────────────────────
+  # تمرّر /auth /rest /realtime /storage، وتتحقق من مفتاح apikey. إعدادها منقول
+  # من Supabase كما هو (لا تعدّل cds/lds/envoy.yaml إلا عن علم).
+  api-gw:
+    container_name: ${COMPOSE_PROJECT_NAME:-sho-erp}-envoy
+    image: envoyproxy/envoy:v1.39.0
+    restart: unless-stopped
+    # Envoy resolves the upstream names (auth, rest, storage, realtime) with its own
+    # resolver. If it starts before those containers exist, that resolver can stay
+    # stuck failing for hours (observed on Synology DSM). Starting it after them
+    # (started, not healthy) avoids that.
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_started
+      rest:
+        condition: service_started
+      realtime:
+        condition: service_started
+      storage:
+        condition: service_started
+    networks:
+      default:
+        # أسماء بديلة يشير إليها بقية إعدادات Supabase الداخلية.
+        aliases:
+          - envoy
+          - kong
+    healthcheck:
+      # فحص منفذ TCP: الصورة بلا curl/wget.
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/127.0.0.1/8000'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ports:
+      - ${API_GW_BIND:-0.0.0.0}:${API_GW_HTTP_PORT:-8000}:8000/tcp
+    volumes:
+      - ./volumes/api/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./volumes/api/envoy/cds.yaml:/etc/envoy/cds.yaml:ro
+      - ./volumes/api/envoy/lds.template.yaml:/etc/envoy/lds.template.yaml:ro
+      - ./volumes/api/envoy/docker-entrypoint.sh:/docker-entrypoint.sh:ro
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:-}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-}
+      ANON_KEY_ASYMMETRIC: ${ANON_KEY_ASYMMETRIC:-}
+      SERVICE_ROLE_KEY_ASYMMETRIC: ${SERVICE_ROLE_KEY_ASYMMETRIC:-}
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      DASHBOARD_USERNAME: ${DASHBOARD_USERNAME}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}
+    entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
+
+  # ── الدخول (GoTrue) ───────────────────────────────────────────────────────
+  auth:
+    image: supabase/gotrue:v2.189.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
+      timeout: 5s
+      interval: 5s
+      # First start runs ~70 internal migrations; slow disks need minutes.
+      start_period: 300s
+      retries: 10
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL}
+
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+
+      GOTRUE_SITE_URL: ${SITE_URL}
+      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS}
+      # التسجيل العام مغلق: التطبيق يُنشئ المستخدمين من لوحة الإدارة فقط
+      # (auth.admin.createUser لا يتأثر بهذا الإعداد).
+      GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP}
+
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_ISSUER: ${API_EXTERNAL_URL}
+
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: ${ENABLE_EMAIL_SIGNUP}
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: ${ENABLE_ANONYMOUS_USERS}
+      GOTRUE_MAILER_AUTOCONFIRM: ${ENABLE_EMAIL_AUTOCONFIRM}
+
+      # لا يُرسل GoTrue أي بريد: التطبيق يرسل الاسترداد بنفسه عبر إعدادات SMTP داخله.
+      # القيم أدناه مطلوبة لبدء الخدمة فقط (وهمية افتراضيًا).
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
+      GOTRUE_SMTP_HOST: ${SMTP_HOST}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT}
+      GOTRUE_SMTP_USER: ${SMTP_USER}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS}
+      GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME}
+      GOTRUE_MAILER_URLPATHS_INVITE: ${MAILER_URLPATHS_INVITE}
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: ${MAILER_URLPATHS_CONFIRMATION}
+      GOTRUE_MAILER_URLPATHS_RECOVERY: ${MAILER_URLPATHS_RECOVERY}
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: ${MAILER_URLPATHS_EMAIL_CHANGE}
+
+      GOTRUE_EXTERNAL_PHONE_ENABLED: ${ENABLE_PHONE_SIGNUP}
+      GOTRUE_SMS_AUTOCONFIRM: ${ENABLE_PHONE_AUTOCONFIRM}
+
+  # ── واجهة البيانات (PostgREST) ────────────────────────────────────────────
+  rest:
+    image: postgrest/postgrest:v14.12
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "postgrest", "--ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
+      PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS:-1000}
+      PGRST_DB_EXTRA_SEARCH_PATH: ${PGRST_DB_EXTRA_SEARCH_PATH:-public}
+      PGRST_DB_ANON_ROLE: anon
+
+      PGRST_ADMIN_SERVER_PORT: 3001
+      PGRST_ADMIN_SERVER_HOST: localhost
+
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY}
+    command: ["postgrest"]
+
+  # ── التحديث اللحظي (Realtime) ─────────────────────────────────────────────
+  realtime:
+    image: supabase/realtime:v2.102.3
+    restart: unless-stopped
+    networks:
+      default:
+        # Realtime يستخرج معرّف المستأجر من اسم المضيف، والبوابة (cds.yaml)
+        # تتصل بهذا الاسم حرفيًا. لا تغيّره.
+        aliases:
+          - realtime-dev.supabase-realtime
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'curl -sSfL --head -o /dev/null -H "Authorization: Bearer ${ANON_KEY}" http://localhost:4000/api/tenants/realtime-dev/health',
+        ]
+      timeout: 5s
+      interval: 30s
+      retries: 3
+      # First start creates its own schema in the database; allow for slow disks.
+      start_period: 300s
+    environment:
+      PORT: 4000
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_PORT}
+      DB_USER: supabase_admin
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+      DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
+      DB_ENC_KEY: ${REALTIME_DB_ENC_KEY:-supabaserealtime}
+
+      API_JWT_SECRET: ${JWT_SECRET}
+
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      METRICS_JWT_SECRET: ${JWT_SECRET}
+      ERL_AFLAGS: -proto_dist inet_tcp
+      DNS_NODES: "''"
+      RLIMIT_NOFILE: "10000"
+      APP_NAME: realtime
+      SEED_SELF_HOST: "true"
+      RUN_JANITOR: "true"
+      DISABLE_HEALTHCHECK_LOGGING: "true"
+
+  # ── التخزين (Storage) ─────────────────────────────────────────────────────
+  storage:
+    image: supabase/storage-api:v1.60.4
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      rest:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://storage:5000/status"]
+      timeout: 5s
+      interval: 5s
+      retries: 10
+      # First start runs its schema migrations; allow for slow disks.
+      start_period: 300s
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://rest:3000
+
+      AUTH_JWT_SECRET: ${JWT_SECRET}
+
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+      STORAGE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      REQUEST_ALLOW_X_FORWARDED_PATH: "true"
+      FILE_SIZE_LIMIT: 2147483648
+      STORAGE_BACKEND: file
+      GLOBAL_S3_BUCKET: ${GLOBAL_S3_BUCKET}
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: ${STORAGE_TENANT_ID}
+      REGION: ${REGION}
+      # تحويل الصور غير مستعمل في التطبيق، فلا حاجة لـimgproxy.
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+      S3_PROTOCOL_ACCESS_KEY_ID: ${S3_PROTOCOL_ACCESS_KEY_ID}
+      S3_PROTOCOL_ACCESS_KEY_SECRET: ${S3_PROTOCOL_ACCESS_KEY_SECRET}
+    volumes:
+      - ./volumes/storage:/var/lib/storage:z
+
+  # ── قاعدة البيانات ────────────────────────────────────────────────────────
+  # يجب أن تبقى صورة supabase/postgres (لا postgres العادية): الهجرات تعتمد على
+  # pg_net وpg_cron ومخططات auth وstorage ودور authenticator وغيرها.
+  db:
+    image: supabase/postgres:17.6.1.136
+    restart: unless-stopped
+    volumes:
+      - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
+      # pg_net ومخطط supabase_functions (يلزم صلاحية superuser فيُنفَّذ هنا لا في الهجرات).
+      - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
+      - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
+      - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
+      # بيانات القاعدة (تبقى بين إعادات التشغيل).
+      - ./volumes/db/data:/var/lib/postgresql/data:Z
+      # يحفظ مفتاح pgsodium بين إعادات التشغيل.
+      - db-config:/etc/postgresql-custom
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      # أول تشغيل ينفّذ عشرات سكربتات التهيئة؛ على قرص NAS بطيء قد يأخذ دقائق.
+      start_period: 120s
+      retries: 60
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: ${POSTGRES_PORT}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      POSTGRES_DB: ${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: ${JWT_EXPIRY}
+    # للوصول الخارجي للقاعدة (أدوات نسخ/إدارة) افتح المنفذ على loopback فقط:
+    #ports:
+    #  - 127.0.0.1:${POSTGRES_PORT}:${POSTGRES_PORT}
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      # يمنع ظهور استعلامات Realtime الدورية في السجل.
+      - log_min_messages=fatal
+
+  # ══ اختياري: لوحة الإدارة (للمسؤول فقط) ═══════════════════════════════════
+  #   docker compose --profile admin up -d
+  # تظهر على جذر بوابة API خلف مصادقة DASHBOARD_USERNAME/DASHBOARD_PASSWORD.
+  studio:
+    profiles: ["admin"]
+    image: supabase/studio:2026.08.03-sha-022b374
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "fetch(''http://localhost:3000/api/platform/profile'').then((r) => {if (r.status !== 200) throw new Error(r.status)})"',
+        ]
+      timeout: 10s
+      interval: 5s
+      retries: 3
+      start_period: 20s
+    environment:
+      HOSTNAME: "0.0.0.0"
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER_READ_WRITE: postgres
+      PG_META_CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
+      PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS:-1000}
+      PGRST_DB_EXTRA_SEARCH_PATH: ${PGRST_DB_EXTRA_SEARCH_PATH:-public}
+      DEFAULT_ORGANIZATION_NAME: ${STUDIO_DEFAULT_ORGANIZATION}
+      DEFAULT_PROJECT_NAME: ${STUDIO_DEFAULT_PROJECT}
+      SUPABASE_URL: http://api-gw:8000
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      AUTH_JWT_SECRET: ${JWT_SECRET}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:-}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-}
+      ENABLED_FEATURES_LOGS_ALL: "false"
+      SNIPPETS_MANAGEMENT_FOLDER: /app/snippets
+    volumes:
+      - ./volumes/snippets:/app/snippets:z
+
+  meta:
+    profiles: ["admin"]
+    image: supabase/postgres-meta:v0.96.6
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: ${POSTGRES_HOST}
+      PG_META_DB_PORT: ${POSTGRES_PORT}
+      PG_META_DB_NAME: ${POSTGRES_DB}
+      PG_META_DB_USER: postgres
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
+
+volumes:
+  db-config:
+  app-data:

@@ -1,0 +1,11 @@
+# وكيل عكسي اختياري بشهادة TLS تلقائية (Let's Encrypt). غيّر النطاقين ثم:
+#   docker run -d --name caddy --network sho-erp_default -p 80:80 -p 443:443 \
+#     -v $PWD/Caddyfile:/etc/caddy/Caddyfile -v caddy-data:/data caddy:2
+# واضبط في .env: APP_BIND=127.0.0.1 و API_GW_BIND=127.0.0.1 و SUPABASE_PUBLIC_URL=https://api.example.com
+erp.example.com {
+	reverse_proxy app:3000
+}
+api.example.com {
+	# WebSocket (Realtime) يمرّ تلقائيًا.
+	reverse_proxy api-gw:8000
+}

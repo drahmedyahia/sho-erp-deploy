@@ -1,0 +1,8 @@
+# Also publishes the database port (--db-bind of `sh install.sh --supabase-only`), for an app that
+# cannot join the project's network: a program outside Docker, an SSH tunnel, another machine.
+# It is added to COMPOSE_FILE in .env only when --db-bind is given. Keep DB_BIND on 127.0.0.1 or
+# the gateway address of a Docker network unless the network around the server is trusted.
+services:
+  db:
+    ports:
+      - ${DB_BIND:-127.0.0.1}:${DB_PORT:-55432}:${POSTGRES_PORT}

@@ -1,0 +1,1389 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sho-ERP — Install files generator</title>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --card: #ffffff;
+        --text: #1b1f24;
+        --muted: #5b6570;
+        --line: #d9dee4;
+        --accent: #1d6fdc;
+        --warn-bg: #fff4e0;
+        --warn-line: #e5a50a;
+        --code: #0f1720;
+        --code-text: #d7e3f0;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #11151a;
+          --card: #1a2027;
+          --text: #e8edf2;
+          --muted: #9aa6b2;
+          --line: #2b343d;
+          --accent: #5da0ff;
+          --warn-bg: #2e2410;
+          --warn-line: #a87a0c;
+          --code: #0b0f14;
+          --code-text: #cfe0f1;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.6 system-ui,
+          -apple-system,
+          "Segoe UI",
+          Tahoma,
+          sans-serif;
+      }
+      main {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 20px 16px 56px;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 1.1rem;
+        margin: 0 0 10px;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+        margin: 14px 0;
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin: 12px 0 4px;
+      }
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        font: inherit;
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      input:focus-visible,
+      button:focus-visible,
+      summary:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 560px) {
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--text);
+      }
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        font-weight: 600;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .warn {
+        background: var(--warn-bg);
+        border: 1px solid var(--warn-line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin: 14px 0;
+      }
+      .error {
+        color: #c0392b;
+        font-weight: 600;
+        min-height: 1.4em;
+      }
+      textarea {
+        width: 100%;
+        height: 220px;
+        direction: ltr;
+        text-align: left;
+        font:
+          13px/1.5 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Consolas,
+          monospace;
+        background: var(--code);
+        color: var(--code-text);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        resize: vertical;
+      }
+      pre {
+        direction: ltr;
+        text-align: left;
+        background: var(--code);
+        color: var(--code-text);
+        border-radius: 10px;
+        padding: 10px 12px;
+        overflow-x: auto;
+        font-size: 13px;
+        margin: 8px 0;
+      }
+      details {
+        border-top: 1px solid var(--line);
+        padding: 10px 0;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+      /* a card or a step whose whole content is one collapsible: no extra rule above it */
+      .card > details:only-child,
+      li > details:only-child {
+        border-top: 0;
+        padding: 0;
+      }
+      ol {
+        margin: 8px 0 0;
+        padding-inline-start: 22px;
+      }
+      .choice {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        font-weight: 400;
+        margin: 8px 0;
+      }
+      .choice input {
+        width: auto;
+        margin-top: 6px;
+      }
+      .conn {
+        margin: 10px 0;
+      }
+      .conn .name {
+        font-weight: 600;
+      }
+      .conn .line {
+        display: flex;
+        gap: 8px;
+        align-items: stretch;
+      }
+      .conn pre {
+        flex: 1;
+        margin: 4px 0;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="top">
+        <div>
+          <h1 data-t="title"></h1>
+          <p class="muted" data-t="intro"></p>
+        </div>
+        <button type="button" id="lang" aria-label="Language"></button>
+      </div>
+
+      <section class="card">
+        <h2 data-t="stepMode"></h2>
+        <label class="choice"
+          ><input type="radio" name="mode" value="full" checked />
+          <span><b data-t="modeFull"></b><br /><small data-t="modeFullHint"></small></span
+        ></label>
+        <label class="choice"
+          ><input type="radio" name="mode" value="backend" />
+          <span><b data-t="modeBackend"></b><br /><small data-t="modeBackendHint"></small></span
+        ></label>
+      </section>
+
+      <section class="card">
+        <h2 data-t="stepHow"></h2>
+        <label class="choice"
+          ><input type="radio" name="how" value="script" checked />
+          <span><b data-t="howScript"></b><br /><small data-t="howScriptHint"></small></span
+        ></label>
+        <label class="choice"
+          ><input type="radio" name="how" value="compose" />
+          <span><b data-t="howCompose"></b><br /><small data-t="howComposeHint"></small></span
+        ></label>
+      </section>
+
+      <section class="card" data-mode="backend">
+        <h2 data-t="stepWhere"></h2>
+        <label class="choice"
+          ><input type="radio" name="where" value="network" checked />
+          <span><b data-t="whereNetwork"></b><br /><small data-t="whereNetworkHint"></small></span
+        ></label>
+        <label class="choice"
+          ><input type="radio" name="where" value="bridge" />
+          <span><b data-t="whereBridge"></b><br /><small data-t="whereBridgeHint"></small></span
+        ></label>
+        <label class="choice"
+          ><input type="radio" name="where" value="local" />
+          <span><b data-t="whereLocal"></b><br /><small data-t="whereLocalHint"></small></span
+        ></label>
+        <label class="choice"
+          ><input type="radio" name="where" value="remote" />
+          <span><b data-t="whereRemote"></b><br /><small data-t="whereRemoteHint"></small></span
+        ></label>
+        <div data-where="bridge local">
+          <label for="dbBind" data-t="dbBind"></label>
+          <input id="dbBind" dir="ltr" value="172.17.0.1" autocomplete="off" />
+        </div>
+        <div data-where="bridge">
+          <p class="muted" data-t="bridgeFind"></p>
+          <pre>
+docker network inspect &lt;network&gt; --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}'</pre>
+        </div>
+        <div data-where="remote">
+          <label for="serverAddr" data-t="serverAddr"></label>
+          <input id="serverAddr" dir="ltr" placeholder="192.168.1.10" autocomplete="off" />
+        </div>
+        <div data-where="bridge local remote">
+          <label for="dbPort" data-t="dbPort"></label>
+          <input id="dbPort" type="number" dir="ltr" value="55432" min="1" max="65535" />
+          <p class="muted" data-t="dbPortHint"></p>
+        </div>
+      </section>
+
+      <section class="card" data-mode="backend" data-how="compose">
+        <details>
+          <summary data-t="acTitle"></summary>
+          <p class="muted" data-t="acHint"></p>
+          <label for="acName" data-t="acName"></label>
+          <input id="acName" dir="ltr" value="sho-erp" autocomplete="off" />
+          <div class="row">
+            <div>
+              <label for="acPort" data-t="acPort"></label>
+              <input id="acPort" type="number" dir="ltr" value="3000" min="1" max="65535" />
+            </div>
+            <div>
+              <label for="acProxy" data-t="acProxy"></label>
+              <input id="acProxy" dir="ltr" placeholder="yahia-net" autocomplete="off" />
+            </div>
+          </div>
+          <label for="acData" data-t="acData"></label>
+          <input
+            id="acData"
+            dir="ltr"
+            placeholder="/volume1/docker/sho-erp/app-data"
+            autocomplete="off"
+          />
+          <p class="muted" data-t="acDataHint"></p>
+          <label for="acImage" data-t="acImage"></label>
+          <input
+            id="acImage"
+            dir="ltr"
+            placeholder="ghcr.io/drahmedyahia/sho-erp-release:latest"
+            autocomplete="off"
+          />
+          <label class="choice"
+            ><input type="checkbox" id="acInternal" />
+            <span><b data-t="acInternal"></b><br /><small data-t="acInternalHint"></small></span
+          ></label>
+        </details>
+      </section>
+
+      <section class="card" data-how="script">
+        <details>
+          <summary data-t="sfTitle"></summary>
+          <p class="muted" data-t="sfHint"></p>
+          <div class="row">
+            <div>
+              <label for="sfUser" data-t="sfUser"></label>
+              <input id="sfUser" dir="ltr" placeholder="admin" autocomplete="off" />
+            </div>
+            <div>
+              <label for="sfHost" data-t="sfHost"></label>
+              <input id="sfHost" dir="ltr" placeholder="192.168.1.10" autocomplete="off" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="sfPort" data-t="sfPort"></label>
+              <input id="sfPort" type="number" dir="ltr" placeholder="22" min="1" max="65535" />
+            </div>
+            <div>
+              <label for="sfDir" data-t="sfDir"></label>
+              <input id="sfDir" dir="ltr" placeholder="/opt/sho-erp" autocomplete="off" />
+            </div>
+          </div>
+          <label for="sfRepo" data-t="sfRepo"></label>
+          <input
+            id="sfRepo"
+            dir="ltr"
+            placeholder="https://github.com/drahmedyahia/sho-erp-deploy.git"
+            autocomplete="off"
+          />
+          <label for="sfReg" data-t="sfReg"></label>
+          <input id="sfReg" dir="ltr" placeholder="your-registry-user" autocomplete="off" />
+        </details>
+      </section>
+
+      <section class="card">
+        <h2 data-t="step1"></h2>
+        <div id="appBox">
+          <label for="app" data-t="appLabel" id="appLabelEl"></label>
+          <input
+            id="app"
+            type="url"
+            dir="ltr"
+            placeholder="https://erp.example.com"
+            autocomplete="off"
+          />
+        </div>
+        <label for="api" data-t="apiLabel"></label>
+        <input
+          id="api"
+          type="url"
+          dir="ltr"
+          placeholder="https://api.example.com"
+          autocomplete="off"
+        />
+        <p class="muted" data-t="urlHint" id="urlHintEl"></p>
+        <details id="advancedBox">
+          <summary data-t="advanced"></summary>
+          <label for="projectName" data-t="projectName"></label>
+          <input id="projectName" dir="ltr" placeholder="sho-erp" autocomplete="off" />
+          <p class="muted" data-t="projectHint"></p>
+          <div class="row" data-how="compose">
+            <div data-mode="full">
+              <label for="appPort" data-t="appPort"></label>
+              <input id="appPort" type="number" dir="ltr" value="3000" min="1" max="65535" />
+            </div>
+            <div>
+              <label for="apiPort" data-t="apiPort"></label>
+              <input id="apiPort" type="number" dir="ltr" value="8000" min="1" max="65535" />
+            </div>
+          </div>
+          <div data-mode="backend">
+            <label for="networkName" data-t="networkName"></label>
+            <input id="networkName" dir="ltr" value="sho-supabase" autocomplete="off" />
+            <p class="muted" data-t="networkHint"></p>
+          </div>
+          <div data-how="compose">
+            <label for="dataDir" data-t="dataDir"></label>
+            <input
+              id="dataDir"
+              dir="ltr"
+              placeholder="/volume1/docker/sho-erp/data"
+              autocomplete="off"
+            />
+            <p class="muted" data-t="dataHint"></p>
+          </div>
+          <div data-mode="full" data-how="compose">
+            <label for="image" data-t="image"></label>
+            <input
+              id="image"
+              dir="ltr"
+              placeholder="ghcr.io/drahmedyahia/sho-erp-release:latest"
+              autocomplete="off"
+            />
+            <label for="email" data-t="email"></label>
+            <input
+              id="email"
+              type="email"
+              dir="ltr"
+              placeholder="admin@example.com"
+              autocomplete="off"
+            />
+          </div>
+        </details>
+        <div class="actions">
+          <button type="button" class="primary" id="make" data-t="make"></button>
+        </div>
+        <p class="error" id="error" role="alert"></p>
+      </section>
+
+      <section id="result" hidden>
+        <div class="warn" data-how="compose">
+          <b><span data-t="fpLabel"></span> <code id="fp" dir="ltr"></code></b>
+          <div data-t="fpWarn"></div>
+        </div>
+        <div class="warn" data-how="compose" data-t="saveWarn"></div>
+        <div class="warn" data-t="netWarn"></div>
+        <div class="warn" id="dbWarn" hidden data-t="dbWarn"></div>
+
+        <div class="card" id="connCard" hidden>
+          <h2 data-t="connTitle"></h2>
+          <p class="muted" data-t="connHint"></p>
+          <div id="connRows"></div>
+          <p class="muted" id="portHint" data-t="portHint" hidden></p>
+        </div>
+
+        <div class="card" id="appCard" hidden>
+          <h2 data-t="appTitle"></h2>
+          <p class="muted" data-t="appHint"></p>
+          <pre id="appSnippet"></pre>
+          <div class="actions">
+            <button type="button" data-copy-pre="appSnippet" data-t="copy"></button>
+          </div>
+        </div>
+
+        <div class="card" data-mode="backend" data-how="compose">
+          <h2 data-t="appComposeTitle"></h2>
+          <p class="muted" data-t="appComposeHint"></p>
+          <textarea id="appComposeOut" readonly spellcheck="false"></textarea>
+          <div class="actions">
+            <button type="button" data-copy="appComposeOut" data-t="copy"></button>
+            <button
+              type="button"
+              data-download="appComposeOut"
+              data-name="app.compose.yaml"
+              data-t="download"
+            ></button>
+          </div>
+        </div>
+
+        <div class="card" id="mkdirCard" hidden>
+          <h2 data-t="mkdirTitle"></h2>
+          <p class="muted" data-t="mkdirHint"></p>
+          <pre id="mkdirCmd"></pre>
+          <div class="actions">
+            <button type="button" data-copy-pre="mkdirCmd" data-t="copy"></button>
+          </div>
+        </div>
+
+        <div class="card" data-how="compose">
+          <h2 data-t="envTitle"></h2>
+          <textarea id="envOut" readonly spellcheck="false"></textarea>
+          <div class="actions">
+            <button type="button" data-copy="envOut" data-t="copy"></button>
+            <button
+              type="button"
+              data-download="envOut"
+              data-name=".env"
+              data-t="download"
+            ></button>
+          </div>
+        </div>
+
+        <div class="card" data-how="compose">
+          <h2 data-t="composeTitle"></h2>
+          <textarea id="composeOut" readonly spellcheck="false"></textarea>
+          <div class="actions">
+            <button type="button" data-copy="composeOut" data-t="copy"></button>
+            <button
+              type="button"
+              data-download="composeOut"
+              data-name="compose.yaml"
+              data-t="download"
+            ></button>
+          </div>
+        </div>
+
+        <div class="card" data-how="script">
+          <h2 data-t="sshTitle"></h2>
+          <p class="muted" data-t="sshBefore"></p>
+          <ol>
+            <li data-t="sshStep1"></li>
+            <li>
+              <span data-t="sshStep2"></span>
+              <p class="muted" data-t="sshGetA"></p>
+              <pre id="sshGetScp"></pre>
+              <div class="actions">
+                <button type="button" data-copy-pre="sshGetScp" data-t="copy"></button>
+              </div>
+              <p class="muted" data-t="sshGetB"></p>
+              <pre id="sshGetGit"></pre>
+              <div class="actions">
+                <button type="button" data-copy-pre="sshGetGit" data-t="copy"></button>
+              </div>
+              <p class="muted" data-t="sshGetNote"></p>
+            </li>
+            <li>
+              <details>
+                <summary data-t="sshStep3"></summary>
+                <pre id="sshLogin"></pre>
+                <div class="actions">
+                  <button type="button" data-copy-pre="sshLogin" data-t="copy"></button>
+                </div>
+              </details>
+            </li>
+          </ol>
+          <p class="muted" data-t="sshRun"></p>
+          <pre id="sshCd"></pre>
+          <pre id="sshCmd"></pre>
+          <div class="actions">
+            <button type="button" data-copy-pre="sshCmd" data-t="copy"></button>
+          </div>
+          <p class="muted" data-t="sshDoesTitle"></p>
+          <ol data-mode="full" data-t-list="sshDoesFull"></ol>
+          <ol data-mode="backend" data-t-list="sshDoesBackend"></ol>
+          <p class="muted" data-t="sshDoesAfter"></p>
+        </div>
+
+        <div class="card" data-how="compose">
+          <h2 data-t="howTitle"></h2>
+          <p class="muted" data-t="req"></p>
+          <pre>docker compose version</pre>
+          <details>
+            <summary>Dockge</summary>
+            <ol data-t-list="dockge"></ol>
+          </details>
+          <details>
+            <summary>Portainer</summary>
+            <ol data-t-list="portainer"></ol>
+          </details>
+          <details>
+            <summary>Synology Container Manager</summary>
+            <ol data-t-list="synology"></ol>
+          </details>
+          <details>
+            <summary data-t="terminalTitle"></summary>
+            <ol data-t-list="terminal"></ol>
+            <pre>docker compose up -d --wait</pre>
+          </details>
+        </div>
+
+        <div class="card">
+          <h2 data-t="afterTitle"></h2>
+          <ol data-t-list="after" id="afterFull"></ol>
+          <ol data-t-list="afterBackend" id="afterBackend" hidden></ol>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      /*__CORE__*/
+    </script>
+    <script>
+      /*__DATA__*/
+    </script>
+    <script>
+      (function () {
+        "use strict";
+        var T = {
+          ar: {
+            title: "مولّد ملفات تركيب Sho-ERP",
+            stepMode: "ماذا تريد أن تُنشئ؟",
+            projectName: "اسم المشروع (stack) (اختياري)",
+            projectHint:
+              "بادئة أسماء الحاويات والأقراص (مثل <الاسم>-db-1). في Dockge وPortainer يُستعمل الاسم الذي تكتبه للـ stack هناك؛ وفي الطرفية والسكربت يُستعمل هذا. اختره قبل أول تشغيل: تغييره لاحقًا ينشئ مشروعًا جديدًا. حروف صغيرة وأرقام و - _ فقط. فارغ = اسم المجلد (أو sho-erp للسكربت).",
+            errProject: "اسم المشروع: حروف إنجليزية صغيرة وأرقام و - _ فقط.",
+            fpLabel: "بصمة هذا التوليد:",
+            fpWarn:
+              "الملفان وبيانات الاتصال أدناه كلها من هذا التوليد. كل ضغطة على «ولّد» تصنع أسرارًا جديدة كليًا، فلا تضغط مرة ثانية بعد أن تأخذ الملفين. للتأكد على الخادم أن ملف .env مطابق: شغّل head -n 1 .env فيجب أن يظهر السطر نفسه بالبصمة أعلاه. وإن اختلفت فالملف من توليد آخر ولن تعمل بيانات الاتصال معه.",
+            stepHow: "كيف تريد التثبيت؟",
+            acTitle: "ملف compose لتطبيقك (اختياري)",
+            acHint:
+              "يبني ملفًا كاملًا للتطبيق وحده من docker-compose.yml في المستودع، لتنشره كمشروع مستقل. تجاهله إن كان لديك ملف لتطبيقك: يكفيك المقطع الظاهر في النتائج.",
+            acName: "اسم حاوية التطبيق",
+            acPort: "منفذ التطبيق على الخادم",
+            acProxy: "شبكة وكيلك العكسي (اختيارية)",
+            acData: "مجلد بيانات التطبيق (اختياري)",
+            acDataHint:
+              "فارغ = قرص مسمّى يديره Docker ويضبط صلاحياته تلقائيًا (موصى به). أو مسار مطلق على الخادم يجب أن تستطيع حاوية التطبيق الكتابة فيه: يحفظ التطبيق فيه connection.json.",
+            acImage: "صورة التطبيق (فارغ = الافتراضية)",
+            acInternal: "أضف السطر SUPABASE_INTERNAL_URL",
+            acInternalHint:
+              "اختياري. التطبيق الحديث يكتشف بوابة Supabase داخل الشبكة وحده إن تعذر وصوله إلى العنوان العام؛ هذا السطر يفرضه.",
+            appComposeTitle: "ملف compose لتطبيقك",
+            appComposeHint:
+              "أنشئ به مشروعًا مستقلًا (Dockge أو Portainer أو الطرفية)، ثم افتح عنوان تطبيقك /setup وأدخل الرمز SETUP_TOKEN الموجود فيه مع بيانات الاتصال أعلاه. بعد انتهاء الإعداد أفرغ SETUP_TOKEN وأعد النشر. الصورة الرسمية عامة ولا تحتاج تسجيل دخول.",
+            errAppName: "اسم الحاوية: حروف صغيرة وأرقام و . _ - فقط.",
+            errAppProxy: "اسم شبكة الوكيل: حروف صغيرة وأرقام و . _ - فقط.",
+            howScript: "بسكربت install.sh (بالطرفية عبر SSH)",
+            howScriptHint: "أمر واحد على الخادم: يولّد الأسرار ويشغّل كل شيء ويطبع النتيجة.",
+            howCompose: "بملفات compose (Dockge أو Portainer أو واجهة رسومية)",
+            howComposeHint: "تأخذ ملفين (compose و .env) وتنشئ بهما المشروع في واجهتك، بلا طرفية.",
+            makeScript: "اعرض الأمر",
+            sshTitle: "التثبيت بالسكربت (SSH)",
+            sshBefore: "قبل الأمر، على الخادم:",
+            sfTitle: "أين تضع الملفات على الخادم (اختياري)",
+            sfHint: "تملأ أوامر النسخ أدناه بقيمك. ما تتركه فارغًا يبقى اسمًا بين < > تكتبه بنفسك.",
+            sfUser: "مستخدم SSH",
+            sfHost: "عنوان الخادم",
+            sfPort: "منفذ SSH (اختياري، الافتراضي 22)",
+            sfDir: "مجلد المشروع على الخادم",
+            sfRepo: "رابط مستودع النشر (فارغ = المستودع العام الرسمي)",
+            sfReg: "اسم مستخدم سجل الصور (لصورة خاصة فقط)",
+            errSf: "بيانات الخادم غير صحيحة:",
+            sshStep1: "Docker مع Compose v2 (تحقق: docker compose version).",
+            sshStep2: "ضع مجلد deploy على الخادم بإحدى طريقتين:",
+            sshGetA: "من حاسوبك (scp)، أنشئ المجلد وانسخ deploy إليه:",
+            sshGetB: "أو على الخادم نفسه بـ git، من مستودع النشر العام (فيه مجلد deploy فقط):",
+            sshGetNote:
+              "يلزم أن يكون git مثبتًا. إن لم يتوفر فاستعمل scp. استعمل sudo إن لم تملك صلاحية الكتابة في المجلد.",
+            sshStep3:
+              "اختياري، فقط إن كنت تستعمل صورة خاصة (الصورة الرسمية عامة): سجّل الدخول إلى السجل مرة واحدة (يطلب الرمز عند الطلب):",
+            sshRun: "ثم شغّل من داخل مجلد deploy (أضف sudo في أوله إن لزم):",
+            sshDoesTitle: "ما يفعله هذا الأمر وحده، بالترتيب:",
+            sshDoesAfter:
+              "فلا تسحب صورًا ولا تنشئ حاويات بيدك: أمر واحد يكفي. وهو آمن لإعادة التشغيل: لا يستبدل أسرارًا موجودة.",
+            modeFull: "التطبيق مع Supabase (الكامل)",
+            modeFullHint: "حاويات التطبيق وSupabase معًا، وكل شيء يرتبط تلقائيًا.",
+            modeBackend: "Supabase فقط (بدون التطبيق)",
+            modeBackendHint:
+              "مشروع Supabase منفصل بحاوياته الست (القاعدة والدخول وrest وrealtime والملفات والبوابة). تأخذ بيانات اتصاله وتُدخلها أنت في شاشة /setup لتطبيقك.",
+            appLabelBackend: "عنوان تطبيقك (اختياري، لروابط البريد)",
+            urlHintBackend:
+              "عنوان البوابة هو ما سيستعمله تطبيقك للوصول إلى Supabase (للتجربة المحلية يصح http://192.168.1.10:8000). عنوان التطبيق اختياري؛ اتركه فارغًا إن لم تعرفه الآن.",
+            stepWhere: "أين يعمل تطبيقك؟",
+            whereNetwork: "في حاوية Docker على هذا الخادم (موصى به)",
+            whereNetworkHint:
+              "يدخل تطبيقك شبكة Supabase، فيصل إلى القاعدة باسمها مباشرة. لا يُفتح أي منفذ للقاعدة، ولا خوف من تعارض المنافذ. ستضيف مقطعًا صغيرًا إلى compose تطبيقك (تعرضه الصفحة).",
+            whereBridge: "في حاوية على هذا الخادم، عبر منفذ منشور",
+            whereBridgeHint:
+              "لا تعدّل compose تطبيقك: تفتح القاعدة منفذًا على عنوان بوابة شبكة Docker التي يعمل عليها تطبيقك، ويتصل به التطبيق.",
+            whereLocal: "على هذا الخادم خارج Docker، أو عبر نفق SSH",
+            whereLocalHint: "يُنشر المنفذ على 127.0.0.1 فقط: لا يراه إلا الخادم نفسه.",
+            whereRemote: "على جهاز آخر",
+            whereRemoteHint:
+              "يُنشر المنفذ على كل العناوين ويتصل به تطبيقك بعنوان الخادم. افتحه على شبكتك الموثوقة فقط.",
+            dbBind: "عنوان نشر منفذ القاعدة",
+            bridgeFind:
+              "العنوان الافتراضي 172.17.0.1 هو بوابة شبكة Docker الافتراضية. إن كان تطبيقك على شبكة أخرى (مثل شبكة الوكيل العكسي) فاكتب بوابتها، وتعرفها بهذا الأمر على الخادم (بدّل <network> باسم الشبكة):",
+            serverAddr: "عنوان الخادم كما يصل إليه تطبيقك",
+            dbPort: "منفذ القاعدة على الخادم",
+            dbPortHint:
+              "افتراضي بعيد عن المنافذ الشائعة (5432). إن ظهر عند النشر خطأ address already in use فالمنفذ مستعمل: غيّره هنا وولّد من جديد.",
+            networkName: "اسم شبكة Docker لهذا المشروع",
+            networkHint:
+              "يتحدد به اسم القاعدة على الشبكة (<الاسم>-db). غيّره إن شغّلت مشروع Supabase ثانيًا على الخادم نفسه، فلا يتشاركان اسمًا. حروف صغيرة وأرقام و . _ - فقط.",
+            portHint:
+              "إن فشل النشر بخطأ address already in use فمنفذ القاعدة مستعمل: غيّر DB_PORT في .env (وفي رابط القاعدة بالبطاقة) وانشر من جديد.",
+            appTitle: "ما يُضاف إلى تطبيقك",
+            appHint:
+              "الصق هذا في ملف compose الخاص بتطبيقك (Sho-ERP) ثم أعد نشره. يبقى رابط القاعدة أعلاه كما هو: يعمل من داخل هذه الشبكة. سطر SUPABASE_INTERNAL_URL اختياري ومنصوح به: يبقي نداءات خادم التطبيق إلى Supabase داخل الشبكة. يمكنك حذفه إن كان عنوان Supabase العام يصل من حاوية تطبيقك (مثل DNS داخلي يوجّهه إلى الوكيل العكسي)؛ وإلا فقد تفشل النداءات (fetch failed) ولا يُنشأ حساب المدير الأول.",
+            dbWarn:
+              "تحذير: نشرت منفذ القاعدة على كل العناوين. لا تفتحه للإنترنت: كلمة السر وحدها تحميه، ولا تشفير في الاتصال. اسمح به لشبكتك المحلية فقط في جدار الحماية، أو استعمل نفق SSH.",
+            errNetwork: "اسم الشبكة: حروف إنجليزية صغيرة وأرقام و . _ - فقط.",
+            errServer: "اكتب عنوان الخادم (IP أو اسم) كما يصل إليه تطبيقك، وليس 0.0.0.0.",
+            errBind: "عنوان النشر يجب أن يكون IPv4 صحيحًا مثل 127.0.0.1.",
+            makeBackend: "ولّد الملفين وبيانات الاتصال",
+            connTitle: "بيانات الاتصال (انسخها إلى شاشة /setup في تطبيقك)",
+            connHint: "تظهر مرة واحدة مع الملفات؛ احفظها في مكان آمن. مفتاح الخدمة سرّي جدًا.",
+            connDb: "Database URL (Connection string)",
+            connProject: "Project URL",
+            connAnon: "Public key (anon key)",
+            connService: "Service role key (سرّي)",
+            intro:
+              "تعمل هذه الصفحة داخل متصفحك فقط: الأسرار تُولَّد هنا ولا تُرسَل إلى أي مكان. لا حاجة إلى SSH.",
+            step1: "عنواناك العامان",
+            appLabel: "عنوان التطبيق (ما يكتبه المستخدمون)",
+            apiLabel: "عنوان بوابة الـ API",
+            urlHint:
+              "اسمان مختلفان بـ https، يوجّههما وكيلك العكسي إلى الخادم (التطبيق ← المنفذ 3000، البوابة ← المنفذ 8000 مع تفعيل WebSocket). للتجربة على الشبكة المحلية يصح http://192.168.1.10:3000 و http://192.168.1.10:8000.",
+            advanced: "خيارات متقدمة",
+            appPort: "منفذ التطبيق على الخادم",
+            apiPort: "منفذ البوابة على الخادم",
+            dataDir: "مجلد البيانات على الخادم (اختياري)",
+            dataHint:
+              "فارغ = يحفظ Docker القاعدة والملفات في مجلدات مسمّاة يديرها بنفسه. أو اكتب مسارًا مطلقًا (مثل /volume1/docker/sho-erp/data) فتُحفَظ القاعدة في db/ والملفات في storage/ داخله، فتراها وتنسخها بنفسك. يجب أن يوجد المجلدان db و storage قبل النشر، وستعرض الصفحة أمر إنشائهما بعد التوليد. إعدادات التطبيق الصغيرة تبقى في مجلد مسمّى دائمًا.",
+            image: "صورة التطبيق (اتركها فارغة للافتراضية)",
+            email: "بريد المدير الأول (اختياري)",
+            make: "ولّد الملفين",
+            errUrls: "اكتب عنوانين صحيحين يبدآن بـ http:// أو https:// (بلا مسار بعد الاسم).",
+            errSame: "العنوانان يجب أن يختلفا.",
+            errDir:
+              "مسار البيانات يجب أن يكون مطلقًا يبدأ بـ / وحروفه إنجليزية أو أرقام أو . _ - @ + فقط (بلا مسافات أو نقطتين).",
+            errGen: "تعذّر توليد الملفين. جرّب متصفحًا حديثًا أو افتح الصفحة عبر https.",
+            saveWarn:
+              "احفظ ملف .env الآن في مكان آمن. لن يُعرض مرة أخرى، وضياعه يعني ضياع القدرة على فك تشفير البيانات المخزنة. لا تشاركه مع أحد.",
+            mkdirTitle: "أنشئ مجلدي البيانات أولًا",
+            mkdirHint:
+              "شغّل هذا الأمر على الخادم قبل الضغط على Deploy، وإلا يفشل النشر بخطأ: Bind mount failed ... does not exist.",
+            netWarn:
+              "تحذير: لا تصل حاويات هذا المشروع (خصوصًا البوابة api-gw) بشبكة Docker مشتركة مع مشاريع أخرى، مثل شبكة الوكيل العكسي. أسماء الخدمات الداخلية (rest وauth وdb وstorage وrealtime) تتكرر في كل مشروع Supabase، فقد تتصل البوابة بحاوية من مشروع آخر وتقرأ أو تكتب في قاعدته. اترك المشروع على شبكته الخاصة التي ينشئها Compose، ووجّه الوكيل العكسي إلى المنفذين المنشورين على الجهاز (عنوان الجهاز أو بوابة شبكة الوكيل + المنفذ).",
+            envTitle: "ملف .env",
+            composeTitle: "ملف compose.yaml",
+            copy: "نسخ",
+            copied: "تم النسخ",
+            download: "تنزيل",
+            howTitle: "أنشئ المشروع في واجهتك",
+            req: "يلزم Docker Compose الإصدار 2 (أي أحدث من 2.0). للتحقق، من الطرفية:",
+            terminalTitle: "بالطرفية (SSH)",
+            afterTitle: "بعد أن تعمل الحاويات",
+            lists: {
+              dockge: [
+                "افتح Dockge واضغط «Compose +» ثم سمِّ المشروع (مثل sho-erp).",
+                "الصق محتوى compose.yaml في المحرر الرئيسي، والصق محتوى .env في خانة ملف البيئة (.env).",
+                "اضغط Deploy وانتظر 2–5 دقائق (أول تشغيل بطيء).",
+              ],
+              portainer: [
+                "Stacks ← Add stack ← اختر Web editor وسمِّ المشروع.",
+                "الصق محتوى compose.yaml في المحرر.",
+                "تحت Environment variables اختر Advanced mode والصق محتوى .env.",
+                "اضغط Deploy the stack.",
+              ],
+              synology: [
+                "في File Station أنشئ مجلدًا (مثل docker/sho-erp) وارفع إليه الملفين compose.yaml و .env.",
+                "في Container Manager اختر Project ← Create، وحدّد ذلك المجلد، واختر استخدام docker-compose.yml الموجود.",
+                "تابع حتى النهاية وفعّل البدء. (إن كان اسم الملف مطلوبًا باسم docker-compose.yml فأعد تسمية compose.yaml.)",
+              ],
+              terminal: [
+                "احفظ الملفين compose.yaml و .env في مجلد على الخادم (يجب أن يكون اسم الأول compose.yaml أو docker-compose.yml، وإلا أضف -f <اسم الملف> إلى الأمر)، ثم من داخله:",
+              ],
+              after: [
+                "وجّه وكيلك العكسي إلى المنفذين المنشورين على الجهاز: عنوان التطبيق ← http://<الخادم>:<منفذ التطبيق>، وعنوان الـ API ← http://<الخادم>:<منفذ البوابة> مع تفعيل WebSocket، وشهادة https لكليهما (لا تصل الحاويات بشبكة الوكيل). لا تضع تعليمات nginx مخصصة.",
+                "افتح عنوان التطبيق في متصفح: هذا ما يبدأ تثبيت قاعدة البيانات (قد يستغرق دقائق). الطلب المجرد بدون متصفح لا يبدؤه.",
+                "المدير الأول: admin@local.com وكلمة المرور المؤقتة admin1234؛ ستُجبَر على تغييرها عند أول دخول، ثم أدخل رمز الترخيص.",
+                "إن كانت صورة التطبيق خاصة وظهر خطأ unauthorized عند السحب، فسجّل الدخول إلى السجل على الخادم مرة واحدة: docker login ghcr.io.",
+              ],
+              sshDoesFull: [
+                "يتأكد أن Docker وCompose v2 موجودان.",
+                "يولّد كل الأسرار (كلمة سر القاعدة والمفاتيح...) ويكتب ملف .env بجانبه، ولا يستبدل أسرارًا موجودة.",
+                "يكتب فيه عنوانَيك واسم المشروع إن أعطيته.",
+                "ينشئ مجلدات البيانات (القاعدة والملفات) بجانبه.",
+                "يسحب كل الصور: حاويات Supabase وصورة التطبيق (docker compose pull).",
+                "ينشئ ويشغّل كل الحاويات، التطبيق وSupabase معًا، وينتظر حتى تصير سليمة (docker compose up -d --wait).",
+                "يشغّل فحصًا ذاتيًا (doctor.sh) ثم يطبع عنوان التطبيق وما يجب فعله بعده.",
+              ],
+              sshDoesBackend: [
+                "يتأكد أن Docker وCompose v2 موجودان.",
+                "يولّد كل الأسرار ويكتب ملف .env بجانبه، ولا يستبدل أسرارًا موجودة.",
+                "يكتب فيه عنوان البوابة واسم المشروع واسم الشبكة.",
+                "إن اخترت منفذًا منشورًا للقاعدة: يتحقق أنه حر، وإلا يأخذ أول منفذ حر ويخبرك.",
+                "ينشئ مجلدات البيانات بجانبه، ويسحب صور Supabase وحدها (لا تطبيق هنا).",
+                "ينشئ شبكة Supabase المسمّاة ويشغّل الحاويات الست وينتظر حتى تصير سليمة.",
+                "يشغّل فحصًا ذاتيًا ثم يطبع بيانات الاتصال الأربع (رابط القاعدة وعنوان المشروع والمفتاحين) لتنسخها إلى شاشة /setup، ويطبع المقطع الذي يُضاف إلى تطبيقك إن لزم.",
+              ],
+              afterBackend: [
+                "انتظر حتى تصير الحاويات الست سليمة (2–5 دقائق في أول تشغيل). لا يوجد هنا تطبيق: القاعدة فارغة بلا جداول حتى يتصل بها تطبيقك.",
+                "افتح شاشة /setup في تطبيقك (الطريقة B) وانسخ إليها القيم الأربع من بطاقة بيانات الاتصال أعلاه، ثم أكمل الإعداد: يثبّت التطبيق جداوله في هذه القاعدة.",
+                "إن أردت أن يصل المتصفح إلى Supabase من خارج الشبكة فوجّه وكيلك العكسي إلى منفذ البوابة المنشور (مع تفعيل WebSocket وشهادة https)، واجعل Project URL هو العنوان نفسه الذي كتبته أعلاه. أما منفذ القاعدة فلا يُعرَّض للإنترنت أبدًا.",
+              ],
+            },
+          },
+          en: {
+            title: "Sho-ERP install files generator",
+            stepMode: "What do you want to create?",
+            projectName: "Project (stack) name (optional)",
+            projectHint:
+              "The prefix of the container and volume names (like <name>-db-1). Dockge and Portainer use the name you give the stack there; the terminal and the script use this one. Choose it before the first start: changing it later creates a new project. Lower-case letters, digits and - _ only. Empty = the folder name (or sho-erp for the script).",
+            errProject: "Project name: lower-case letters, digits and - _ only.",
+            fpLabel: "Fingerprint of this generation:",
+            fpWarn:
+              "The files and the connection details below all come from this generation. Every click on Generate makes entirely new secrets, so do not click again once you have taken the files. To check on the server that your .env matches, run head -n 1 .env: the line must show the same fingerprint as above. If it differs, the file is from another generation and the connection details will not work with it.",
+            stepHow: "How do you want to install?",
+            acTitle: "Your app's compose file (optional)",
+            acHint:
+              "Builds a complete compose file for the app alone from the repository's docker-compose.yml, for you to deploy as a project of its own. Ignore it if you already have a file for your app: the snippet in the results is enough.",
+            acName: "App container name",
+            acPort: "App port on the server",
+            acProxy: "Your reverse proxy's network (optional)",
+            acData: "App data folder (optional)",
+            acDataHint:
+              "Empty = a named volume that Docker manages and gives the right permissions (recommended). Or an absolute path on the server that the app's container can write to: the app keeps connection.json in it.",
+            acImage: "App image (empty = the default)",
+            acInternal: "Add the SUPABASE_INTERNAL_URL line",
+            acInternalHint:
+              "Optional. A recent app finds the Supabase gateway inside the network by itself when it cannot reach the public address; this line forces it.",
+            appComposeTitle: "Your app's compose file",
+            appComposeHint:
+              "Create a project of its own with it (Dockge, Portainer or the terminal), then open your app address /setup and enter the SETUP_TOKEN in it together with the connection details above. When the setup is done, empty SETUP_TOKEN and deploy again. The official image is public: no registry login is needed.",
+            errAppName: "Container name: lower-case letters, digits and . _ - only.",
+            errAppProxy: "Proxy network name: lower-case letters, digits and . _ - only.",
+            howScript: "With the install.sh script (a terminal over SSH)",
+            howScriptHint:
+              "One command on the server: it makes the secrets, starts everything and prints the result.",
+            howCompose: "With compose files (Dockge, Portainer or a GUI)",
+            howComposeHint:
+              "You take two files (compose and .env) and create the project with them in your interface, no terminal.",
+            makeScript: "Show the command",
+            sshTitle: "Installing with the script (SSH)",
+            sshBefore: "Before the command, on the server:",
+            sfTitle: "Where the files go on the server (optional)",
+            sfHint:
+              "Fills the copy commands below with your values. Whatever you leave empty stays a name in < > for you to type.",
+            sfUser: "SSH user",
+            sfHost: "Server address",
+            sfPort: "SSH port (optional, default 22)",
+            sfDir: "Project folder on the server",
+            sfRepo: "Deploy repository address (empty = the official public one)",
+            sfReg: "Image registry user name (only for a private image)",
+            errSf: "Invalid server detail:",
+            sshStep1: "Docker with Compose v2 (check: docker compose version).",
+            sshStep2: "Put the deploy folder on the server, either way:",
+            sshGetA: "From your computer (scp): make the folder and copy deploy into it:",
+            sshGetB:
+              "Or on the server itself with git, from the public deploy repository (it holds the deploy folder only):",
+            sshGetNote:
+              "git must be installed. If it is not available use scp. Use sudo if you cannot write in the folder.",
+            sshStep3:
+              "Optional, only if you use a private image (the official one is public): log in to the registry once (it asks for the token):",
+            sshRun: "Then run, from inside the deploy folder (prefix it with sudo if needed):",
+            sshDoesTitle: "What this one command does, in order:",
+            sshDoesAfter:
+              "So you pull no images and create no containers by hand: one command is enough. It is safe to run again: it never replaces existing secrets.",
+            modeFull: "The app with Supabase (full)",
+            modeFullHint: "The app and Supabase containers together, linked automatically.",
+            modeBackend: "Supabase only (no app)",
+            modeBackendHint:
+              "A separate Supabase project with its six containers (database, auth, rest, realtime, storage and the gateway). You take its connection details and enter them yourself in your app's /setup screen.",
+            appLabelBackend: "Your app's address (optional, for email links)",
+            urlHintBackend:
+              "The gateway address is what your app will use to reach Supabase (for a local test http://192.168.1.10:8000 works). The app address is optional; leave it empty if you do not know it yet.",
+            stepWhere: "Where does your app run?",
+            whereNetwork: "In a Docker container on this server (recommended)",
+            whereNetworkHint:
+              "Your app joins the Supabase network and reaches the database by its name. No database port is opened, and no port can clash. You add a small piece to your app's compose (the page shows it).",
+            whereBridge: "In a container on this server, through a published port",
+            whereBridgeHint:
+              "You do not touch your app's compose: the database opens a port on the gateway address of the Docker network your app runs on, and the app connects to it.",
+            whereLocal: "On this server outside Docker, or through an SSH tunnel",
+            whereLocalHint:
+              "The port is published on 127.0.0.1 only: only the server itself sees it.",
+            whereRemote: "On another machine",
+            whereRemoteHint:
+              "The port is published on every address and your app connects with the server's address. Open it on a trusted network only.",
+            dbBind: "Address the database port is published on",
+            bridgeFind:
+              "The default 172.17.0.1 is the gateway of Docker's default network. If your app runs on another network (for example your reverse proxy's), type that network's gateway; find it with this command on the server (replace <network> with the network name):",
+            serverAddr: "The server's address as your app reaches it",
+            dbPort: "Database port on the server",
+            dbPortHint:
+              "The default is far from the usual ones (5432). If deploying fails with address already in use, the port is taken: change it here and generate again.",
+            networkName: "Docker network name for this project",
+            networkHint:
+              "It also sets the database's name on the network (<name>-db). Change it if you run a second Supabase project on the same server, so they do not share a name. Lower-case letters, digits and . _ - only.",
+            portHint:
+              "If deploying fails with address already in use, the database port is taken: change DB_PORT in .env (and in the database URL of the card) and deploy again.",
+            appTitle: "What to add to your app",
+            appHint:
+              "Paste this into the compose file of your app (Sho-ERP) and redeploy it. The database URL above stays as it is: it works from inside this network. The SUPABASE_INTERNAL_URL line is optional and recommended: it keeps the app server's own calls to Supabase inside the network. You can drop it if the public Supabase address is reachable from your app's container (for example an internal DNS that points it at your reverse proxy); otherwise those calls may fail (fetch failed) and the first administrator is never created.",
+            dbWarn:
+              "Warning: you published the database port on every address. Do not open it to the internet: only the password protects it and the connection is not encrypted. Allow it from your local network only in the firewall, or use an SSH tunnel.",
+            errNetwork: "Network name: lower-case letters, digits and . _ - only.",
+            errServer:
+              "Enter the server's address (IP or name) as your app reaches it, not 0.0.0.0.",
+            errBind: "The publish address must be a valid IPv4 address such as 127.0.0.1.",
+            makeBackend: "Generate the files and the connection details",
+            connTitle: "Connection details (copy them into your app's /setup screen)",
+            connHint:
+              "Shown once with the files; keep them somewhere safe. The service role key is highly secret.",
+            connDb: "Database URL (Connection string)",
+            connProject: "Project URL",
+            connAnon: "Public key (anon key)",
+            connService: "Service role key (secret)",
+            intro:
+              "This page runs only in your browser: secrets are generated here and never sent anywhere. No SSH needed.",
+            step1: "Your public addresses",
+            appLabel: "App address (what users type)",
+            apiLabel: "API gateway address",
+            urlHint:
+              "Two different https names that your reverse proxy forwards to the server (app → port 3000, gateway → port 8000 with WebSocket on). For a quick LAN test, http://192.168.1.10:3000 and http://192.168.1.10:8000 work.",
+            advanced: "Advanced options",
+            appPort: "App port on the server",
+            apiPort: "Gateway port on the server",
+            dataDir: "Data folder on the server (optional)",
+            dataHint:
+              "Empty = Docker keeps the database and files in named volumes it manages. Or type an absolute path (for example /volume1/docker/sho-erp/data) and the database goes to db/ and the files to storage/ inside it, where you can see and copy them. The db and storage folders must exist before you deploy; the page shows the command that creates them after you generate. The app's small settings always stay in a named volume.",
+            image: "App image (leave empty for the default)",
+            email: "First administrator email (optional)",
+            make: "Generate the two files",
+            errUrls:
+              "Enter two valid addresses starting with http:// or https:// (no path after the name).",
+            errSame: "The two addresses must be different.",
+            errDir:
+              "The data folder must be an absolute path starting with / using only letters, digits and . _ - @ + (no spaces or colons).",
+            errGen:
+              "Could not generate the files. Try a current browser or open the page over https.",
+            saveWarn:
+              "Save the .env file somewhere safe now. It will not be shown again, and losing it means losing the ability to decrypt stored data. Share it with nobody.",
+            mkdirTitle: "Create the two data folders first",
+            mkdirHint:
+              "Run this on the server before you click Deploy, otherwise the deployment fails with: Bind mount failed ... does not exist.",
+            netWarn:
+              "Warning: do not attach this project's containers (especially the api-gw gateway) to a Docker network shared with other projects, such as your reverse proxy's network. The internal service names (rest, auth, db, storage, realtime) repeat in every Supabase project, so the gateway may reach a container of another project and read or write its database. Leave the project on the private network Compose creates for it, and point the reverse proxy at the two ports published on the host (the host address or the proxy network's gateway + the port).",
+            envTitle: ".env file",
+            composeTitle: "compose.yaml file",
+            copy: "Copy",
+            copied: "Copied",
+            download: "Download",
+            howTitle: "Create the project in your interface",
+            req: "Needs Docker Compose v2. To check, in a terminal:",
+            terminalTitle: "Terminal (SSH)",
+            afterTitle: "Once the containers run",
+            lists: {
+              dockge: [
+                "Open Dockge, click “Compose +” and name the project (for example sho-erp).",
+                "Paste compose.yaml into the main editor and the .env text into the environment (.env) box.",
+                "Click Deploy and wait 2–5 minutes (the first start is slow).",
+              ],
+              portainer: [
+                "Stacks → Add stack → choose Web editor and name it.",
+                "Paste compose.yaml into the editor.",
+                "Under Environment variables choose Advanced mode and paste the .env text.",
+                "Click Deploy the stack.",
+              ],
+              synology: [
+                "In File Station create a folder (for example docker/sho-erp) and upload compose.yaml and .env into it.",
+                "In Container Manager choose Project → Create, select that folder and choose to use the existing docker-compose.yml.",
+                "Continue to the end and enable starting it. (If the file must be named docker-compose.yml, rename compose.yaml.)",
+              ],
+              terminal: [
+                "Save compose.yaml and .env in one folder on the server (the first must be named compose.yaml or docker-compose.yml, otherwise add -f <file name> to the command), then from inside it:",
+              ],
+              after: [
+                "Point your reverse proxy at the two ports published on the host: the app address → http://<server>:<app port>, the API address → http://<server>:<gateway port> with WebSocket on, https certificates on both (do not attach the containers to the proxy's network). Add no custom nginx directives.",
+                "Open the app address in a browser: that starts installing the database (it can take minutes). A plain HTTP request does not start it.",
+                "First administrator: admin@local.com with the temporary password admin1234; you are forced to change it at the first sign-in, then enter your license code.",
+                "If the app image is private and pulling fails with unauthorized, log in to the registry once on the server: docker login ghcr.io.",
+              ],
+              sshDoesFull: [
+                "Checks that Docker and Compose v2 are there.",
+                "Makes every secret (the database password, the keys...) and writes a .env file next to it, never replacing existing secrets.",
+                "Writes your two addresses into it, and the project name if you gave one.",
+                "Creates the data folders (database and files) next to it.",
+                "Pulls every image: the Supabase containers and the app image (docker compose pull).",
+                "Creates and starts every container, the app and Supabase together, and waits until they are healthy (docker compose up -d --wait).",
+                "Runs a self-check (doctor.sh), then prints the app address and what to do next.",
+              ],
+              sshDoesBackend: [
+                "Checks that Docker and Compose v2 are there.",
+                "Makes every secret and writes a .env file next to it, never replacing existing secrets.",
+                "Writes the gateway address, the project name and the network name into it.",
+                "If you chose a published database port: checks that it is free, otherwise takes the next free one and tells you.",
+                "Creates the data folders next to it and pulls the Supabase images only (there is no app here).",
+                "Creates the named Supabase network, starts the six containers and waits until they are healthy.",
+                "Runs a self-check, then prints the four connection details (database URL, project URL and the two keys) for you to copy into the /setup screen, and the piece to add to your app if needed.",
+              ],
+              afterBackend: [
+                "Wait until the six containers are healthy (2–5 minutes on the first start). There is no app here: the database is empty, without tables, until your app connects to it.",
+                "Open the /setup screen of your app (way B) and copy the four values from the connection card above into it, then finish the setup: the app installs its tables in this database.",
+                "To let browsers reach Supabase from outside your network, point your reverse proxy at the published gateway port (WebSocket on, https certificate) and make the Project URL the same address you typed above. Never expose the database port to the internet.",
+              ],
+            },
+          },
+        };
+
+        var lang = "ar";
+        try {
+          lang = localStorage.getItem("sho-gen-lang") === "en" ? "en" : "ar";
+        } catch (e) {
+          /* private mode: default */
+        }
+        var $ = function (id) {
+          return document.getElementById(id);
+        };
+
+        var mode = "full";
+        var where = "network";
+        var how = "script";
+        var bindTouched = false;
+        // Every block that depends on a choice says so: data-mode (full | backend), data-how
+        // (script | compose) and data-where (the app's place); it shows only when all of them match.
+        function applyMode() {
+          var t = T[lang];
+          var backend = mode === "backend";
+          var compose = how === "compose";
+          document.querySelectorAll("[data-mode], [data-how], [data-where]").forEach(function (el) {
+            var m = el.getAttribute("data-mode");
+            var h = el.getAttribute("data-how");
+            var w = el.getAttribute("data-where");
+            el.hidden = !(
+              (m === null || m === mode) &&
+              (h === null || h === how) &&
+              (w === null || w.split(" ").indexOf(where) >= 0)
+            );
+          });
+          // The script takes no app address in the Supabase-only way (there is no app).
+          $("appBox").hidden = backend && !compose;
+          // Ports, data folder, image and e-mail belong to the compose files only.
+          $("appLabelEl").textContent = backend ? t.appLabelBackend : t.appLabel;
+          $("urlHintEl").textContent = backend ? t.urlHintBackend : t.urlHint;
+          $("make").textContent = !compose ? t.makeScript : backend ? t.makeBackend : t.make;
+          $("afterFull").hidden = backend;
+          $("afterBackend").hidden = !backend;
+        }
+
+        function render() {
+          var t = T[lang];
+          document.documentElement.lang = lang;
+          document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+          document.title = t.title;
+          document.querySelectorAll("[data-t]").forEach(function (el) {
+            el.textContent = t[el.getAttribute("data-t")];
+          });
+          document.querySelectorAll("[data-t-list]").forEach(function (ol) {
+            ol.textContent = "";
+            t.lists[ol.getAttribute("data-t-list")].forEach(function (text) {
+              var li = document.createElement("li");
+              li.textContent = text;
+              ol.appendChild(li);
+            });
+          });
+          $("lang").textContent = lang === "ar" ? "English" : "العربية";
+          applyMode();
+        }
+
+        document.querySelectorAll('input[name="mode"]').forEach(function (radio) {
+          radio.addEventListener("change", function () {
+            if (!radio.checked) return;
+            mode = radio.value;
+            $("result").hidden = true; // what is shown belongs to the other choice
+            applyMode();
+          });
+        });
+        document.querySelectorAll('input[name="how"]').forEach(function (radio) {
+          radio.addEventListener("change", function () {
+            if (!radio.checked) return;
+            how = radio.value;
+            $("result").hidden = true;
+            applyMode();
+          });
+        });
+
+        $("dbBind").addEventListener("input", function () {
+          bindTouched = true;
+        });
+        document.querySelectorAll('input[name="where"]').forEach(function (radio) {
+          radio.addEventListener("change", function () {
+            if (!radio.checked) return;
+            where = radio.value;
+            // The address that fits the choice, unless the user typed one of their own.
+            if (!bindTouched) $("dbBind").value = where === "local" ? "127.0.0.1" : "172.17.0.1";
+            $("result").hidden = true;
+            applyMode();
+          });
+        });
+
+        function fillConnection(details) {
+          var t = T[lang];
+          var rows = [
+            [t.connDb, details.databaseUrl],
+            [t.connProject, details.projectUrl],
+            [t.connAnon, details.anonKey],
+            [t.connService, details.serviceRoleKey],
+          ];
+          var box = $("connRows");
+          box.textContent = "";
+          rows.forEach(function (row) {
+            var wrap = document.createElement("div");
+            wrap.className = "conn";
+            var name = document.createElement("div");
+            name.className = "name";
+            name.textContent = row[0];
+            var line = document.createElement("div");
+            line.className = "line";
+            var pre = document.createElement("pre");
+            pre.textContent = row[1];
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.textContent = t.copy;
+            btn.addEventListener("click", async function () {
+              try {
+                await navigator.clipboard.writeText(row[1]);
+              } catch (e) {
+                var ta = document.createElement("textarea");
+                ta.value = row[1];
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand("copy");
+                ta.remove();
+              }
+              btn.textContent = T[lang].copied;
+              setTimeout(function () {
+                btn.textContent = T[lang].copy;
+              }, 1500);
+            });
+            line.appendChild(pre);
+            line.appendChild(btn);
+            wrap.appendChild(name);
+            wrap.appendChild(line);
+            box.appendChild(wrap);
+          });
+        }
+
+        $("lang").addEventListener("click", function () {
+          lang = lang === "ar" ? "en" : "ar";
+          try {
+            localStorage.setItem("sho-gen-lang", lang);
+          } catch (e) {
+            /* ignore */
+          }
+          render();
+        });
+
+        $("make").addEventListener("click", async function () {
+          var t = T[lang];
+          var G = window.ShoGenerator;
+          var backend = mode === "backend";
+          var compose = how === "compose";
+          var appRaw = $("app").value.trim();
+          var appUrl = backend && !compose ? "" : G.cleanUrl(appRaw);
+          var apiUrl = G.cleanUrl($("api").value);
+          $("error").textContent = "";
+          // The app address is required for the full install; Supabase only takes it as an
+          // option (it falls back to the gateway's) and the script there takes none.
+          var appUsed = !backend || compose;
+          if (!apiUrl || (appUsed && !appUrl && (!backend || appRaw))) {
+            $("error").textContent = t.errUrls;
+            return;
+          }
+          if (appUrl && appUrl === apiUrl) {
+            $("error").textContent = t.errSame;
+            return;
+          }
+          // Supabase only: where the app runs decides the database address (see planBackend).
+          var plan = {};
+          if (backend) {
+            plan = G.planBackend({
+              where: where,
+              network: $("networkName").value,
+              dbBind: $("dbBind").value,
+              serverAddr: $("serverAddr").value,
+              dbPort: $("dbPort").value,
+            });
+            if (plan.error) {
+              $("error").textContent =
+                plan.error === "network"
+                  ? t.errNetwork
+                  : plan.error === "server"
+                    ? t.errServer
+                    : t.errBind;
+              return;
+            }
+          }
+          var projectRaw = $("projectName").value.trim();
+          var project = G.cleanProjectName(projectRaw);
+          if (projectRaw && !project) {
+            $("error").textContent = t.errProject;
+            return;
+          }
+          // The app's own compose file (Supabase only, compose tools).
+          var appFile = null;
+          if (backend && compose) {
+            var acName = G.cleanNetworkName($("acName").value || "sho-erp");
+            var acProxyRaw = $("acProxy").value.trim();
+            var acProxy = G.cleanNetworkName(acProxyRaw);
+            var acDataRaw = $("acData").value.trim();
+            var acData = G.cleanDataDir(acDataRaw);
+            if (!acName) {
+              $("error").textContent = t.errAppName;
+              return;
+            }
+            if (acProxyRaw && !acProxy) {
+              $("error").textContent = t.errAppProxy;
+              return;
+            }
+            if (acDataRaw && !acData) {
+              $("error").textContent = t.errDir;
+              return;
+            }
+            appFile = {
+              image: $("acImage").value.trim(),
+              container: acName,
+              port: G.cleanPort($("acPort").value, 3000),
+              dataDir: acData,
+              proxy: acProxy,
+              join: where === "network",
+              network: plan.network,
+              internal: $("acInternal").checked,
+              token: G.makeSetupToken(),
+            };
+          }
+          var dataDirRaw = compose ? $("dataDir").value.trim() : "";
+          var dataDir = G.cleanDataDir(dataDirRaw);
+          if (dataDirRaw && !dataDir) {
+            $("error").textContent = t.errDir;
+            return;
+          }
+          var env = "";
+          if (compose) {
+            try {
+              var secrets = await G.makeSecrets();
+              env = G.buildEnv(
+                window.SHO_DATA.envTemplate,
+                {
+                  appUrl: appUrl || apiUrl,
+                  apiUrl: apiUrl,
+                  appPort: G.cleanPort($("appPort").value, 3000),
+                  apiPort: G.cleanPort($("apiPort").value, 8000),
+                  image: backend ? "" : $("image").value.trim(),
+                  adminEmail: backend ? "" : $("email").value.trim(),
+                  dataDir: dataDir,
+                  project: project,
+                  network: plan.network,
+                  dbBind: plan.dbBind,
+                  dbPort: plan.dbPort,
+                },
+                secrets,
+              );
+              $("fp").textContent = G.fingerprint(secrets);
+              if (backend) {
+                // Known here only because the files are made here; the script prints its own.
+                fillConnection(
+                  G.connectionDetails({
+                    POSTGRES_PASSWORD: secrets.POSTGRES_PASSWORD,
+                    ANON_KEY: secrets.ANON_KEY,
+                    SERVICE_ROLE_KEY: secrets.SERVICE_ROLE_KEY,
+                    SUPABASE_PUBLIC_URL: apiUrl,
+                    DB_HOST: plan.host,
+                    DB_PORT: plan.port,
+                  }),
+                );
+              }
+            } catch (e) {
+              $("error").textContent = t.errGen + " (" + (e && e.message ? e.message : e) + ")";
+              return;
+            }
+          }
+          if (backend) $("appSnippet").textContent = G.appSnippet(plan.network);
+          $("appComposeOut").value = appFile
+            ? G.buildAppCompose(window.SHO_DATA.appBase, appFile)
+            : "";
+          var published = backend && where !== "network";
+          $("envOut").value = env;
+          $("composeOut").value = !backend
+            ? window.SHO_DATA.compose
+            : published
+              ? window.SHO_DATA.backendDbPortCompose
+              : window.SHO_DATA.backendCompose;
+          $("sshCmd").textContent = G.sshCommand({
+            mode: backend ? "backend" : "full",
+            apiUrl: apiUrl,
+            appUrl: appUrl,
+            plan: plan,
+            project: project,
+          });
+          if (!compose) {
+            var sf = {
+              sshUser: G.cleanUserName($("sfUser").value),
+              sshHost: G.cleanHost($("sfHost").value),
+              sshPort: $("sfPort").value.trim() ? G.cleanPort($("sfPort").value, 22) : "",
+              dir: G.cleanDataDir($("sfDir").value),
+              repo: G.cleanRepoUrl($("sfRepo").value),
+              registryUser: G.cleanUserName($("sfReg").value),
+            };
+            var sfChecks = [
+              ["sfUser", sf.sshUser, "sfUser"],
+              ["sfHost", sf.sshHost, "sfHost"],
+              ["sfDir", sf.dir, "sfDir"],
+              ["sfRepo", sf.repo, "sfRepo"],
+              ["sfReg", sf.registryUser, "sfReg"],
+            ];
+            for (var k = 0; k < sfChecks.length; k++) {
+              if ($(sfChecks[k][0]).value.trim() && !sfChecks[k][1]) {
+                $("error").textContent = t.errSf + " " + t[sfChecks[k][2]];
+                return;
+              }
+            }
+            var fetchCmds = G.sshFetchCommands(sf);
+            $("sshGetScp").textContent = fetchCmds.scp;
+            $("sshGetGit").textContent = fetchCmds.git;
+            $("sshLogin").textContent = fetchCmds.login;
+            $("sshCd").textContent = fetchCmds.cd;
+          }
+          $("mkdirCard").hidden = !(compose && dataDir);
+          $("mkdirCmd").textContent = dataDir
+            ? "sudo mkdir -p " + dataDir + "/db " + dataDir + "/storage"
+            : "";
+          $("connCard").hidden = !(backend && compose);
+          $("portHint").hidden = !published;
+          $("appCard").hidden = !(backend && where === "network");
+          $("dbWarn").hidden = !(backend && where === "remote");
+          applyMode();
+          $("result").hidden = false;
+          $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+
+        document.querySelectorAll("[data-copy]").forEach(function (btn) {
+          btn.addEventListener("click", async function () {
+            var area = $(btn.getAttribute("data-copy"));
+            try {
+              await navigator.clipboard.writeText(area.value);
+            } catch (e) {
+              area.select();
+              document.execCommand("copy");
+            }
+            var old = btn.textContent;
+            btn.textContent = T[lang].copied;
+            setTimeout(function () {
+              btn.textContent = old;
+            }, 1500);
+          });
+        });
+
+        document.querySelectorAll("[data-copy-pre]").forEach(function (btn) {
+          btn.addEventListener("click", async function () {
+            var text = $(btn.getAttribute("data-copy-pre")).textContent;
+            try {
+              await navigator.clipboard.writeText(text);
+            } catch (e) {
+              var ta = document.createElement("textarea");
+              ta.value = text;
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand("copy");
+              ta.remove();
+            }
+            var old = btn.textContent;
+            btn.textContent = T[lang].copied;
+            setTimeout(function () {
+              btn.textContent = old;
+            }, 1500);
+          });
+        });
+
+        document.querySelectorAll("[data-download]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var blob = new Blob([$(btn.getAttribute("data-download")).value], {
+              type: "text/plain",
+            });
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = btn.getAttribute("data-name");
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(function () {
+              URL.revokeObjectURL(a.href);
+            }, 1000);
+          });
+        });
+
+        render();
+      })();
+    </script>
+  </body>
+</html>
