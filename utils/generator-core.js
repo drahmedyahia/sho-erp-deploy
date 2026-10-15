@@ -266,7 +266,28 @@
     return hex(12);
   }
 
-  var DEFAULT_APP_IMAGE = "ghcr.io/drahmedyahia/sho-erp-release:latest";
+  var APP_IMAGE_REPO = "ghcr.io/drahmedyahia/sho-erp-release";
+  var DEFAULT_APP_IMAGE = APP_IMAGE_REPO + ":latest";
+
+  /** A Docker image tag: letters, digits, _ . - (not starting with . or -), at most 128 characters. */
+  function cleanImageTag(value) {
+    var v = String(value || "").trim();
+    return /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(v) ? v : "";
+  }
+
+  /**
+   * The app image from what the page asks: a full image address wins; otherwise a version tag
+   * of the official image (v1.0.0 -> ghcr.io/drahmedyahia/sho-erp-release:v1.0.0); both empty =
+   * "" (the default, :latest). Returns { image } or { error: "tag" }.
+   */
+  function resolveImage(image, tag) {
+    var full = String(image || "").trim();
+    if (full) return { image: full };
+    var raw = String(tag || "").trim();
+    if (!raw) return { image: "" };
+    var clean = cleanImageTag(raw);
+    return clean ? { image: APP_IMAGE_REPO + ":" + clean } : { error: "tag" };
+  }
   /** The public repository that holds the deploy folder as its root (nothing else of the project). */
   var DEFAULT_DEPLOY_REPO = "https://github.com/drahmedyahia/sho-erp-deploy.git";
 
@@ -465,7 +486,9 @@
    */
   function sshCommand(o) {
     var project = o.project ? " --project " + o.project : "";
-    if (o.mode !== "backend") return "sh install.sh" + project + " " + o.apiUrl + " " + o.appUrl;
+    var tag = o.imageTag ? " --image-tag " + o.imageTag : "";
+    if (o.mode !== "backend")
+      return "sh install.sh" + project + tag + " " + o.apiUrl + " " + o.appUrl;
     var p = o.plan;
     var parts = ["sh install.sh --supabase-only" + project];
     if (p.network !== DEFAULT_NETWORK) parts.push("--network " + p.network);
@@ -519,6 +542,8 @@
     makeSetupToken: makeSetupToken,
     buildAppCompose: buildAppCompose,
     DEFAULT_APP_IMAGE: DEFAULT_APP_IMAGE,
+    resolveImage: resolveImage,
+    cleanImageTag: cleanImageTag,
     buildEnv: buildEnv,
     cleanUrl: cleanUrl,
     cleanPort: cleanPort,

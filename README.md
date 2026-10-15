@@ -147,6 +147,7 @@ Differences from the terminal install above:
 - **Save the `.env`** the page shows once: it is not stored anywhere else, and losing it means losing the ability to
   decrypt stored data.
 - Only if you use a private image (the official one is public), log in to the registry once on the server (`docker login ghcr.io`).
+- **Pin a version**: the app image is `:latest` unless you say otherwise. To stay on one release, set `APP_IMAGE=ghcr.io/drahmedyahia/sho-erp-release:v1.0.0` in `.env` (the generator has an "App version" field that writes it, and `sh install.sh --image-tag v1.0.0 ...` does the same for the script way). A pinned version does not change when you run `upgrade.sh`.
 
 `generator.html` and the two files in `standalone/` are generated from `docker-compose.yml` and `volumes/` by
 `node utils/build-standalone.mjs` (a test fails when they are out of date), so both ways install the same system.

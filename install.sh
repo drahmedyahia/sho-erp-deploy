@@ -2,7 +2,7 @@
 # Installs Sho-ERP with its trimmed Supabase stack. Safe to re-run: it never
 # replaces existing secrets.
 #
-#   sh install.sh [--project NAME] [PUBLIC_API_URL] [SITE_URL]
+#   sh install.sh [--project NAME] [--image-tag TAG] [PUBLIC_API_URL] [SITE_URL]
 #   sh install.sh --supabase-only [options] [PUBLIC_API_URL]
 #
 # Examples:
@@ -11,6 +11,9 @@
 #
 # --project NAME sets the Compose project (stack) name, the prefix of the container and volume names
 # (COMPOSE_PROJECT_NAME in .env; sho-erp by default). Give each installation on one server its own.
+#
+# --image-tag TAG pins the app image to one release (for example v1.0.0) instead of :latest: it
+# writes APP_IMAGE in .env as <the image in .env.example>:TAG. Not for --supabase-only (no app).
 #
 # --supabase-only installs the Supabase containers alone (database, auth, rest, realtime, storage
 # and the API gateway), without the app, and prints the connection details to type into the
@@ -30,6 +33,7 @@ die() { echo "Error: $*" >&2; exit 1; }
 
 SUPABASE_ONLY=0
 PROJECT=""
+IMAGE_TAG=""
 NETWORK=sho-supabase
 DB_BIND_OPT=""
 DB_PORT_OPT=""
@@ -38,6 +42,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --supabase-only) SUPABASE_ONLY=1 ;;
     --project) [ $# -ge 2 ] || die "--project needs a value."; PROJECT="$2"; shift ;;
+    --image-tag) [ $# -ge 2 ] || die "--image-tag needs a value."; IMAGE_TAG="$2"; shift ;;
     --network) [ $# -ge 2 ] || die "--network needs a value."; NETWORK="$2"; shift ;;
     --db-bind) [ $# -ge 2 ] || die "--db-bind needs a value."; DB_BIND_OPT="$2"; shift ;;
     --db-port) [ $# -ge 2 ] || die "--db-port needs a value."; DB_PORT_OPT="$2"; shift ;;
@@ -50,6 +55,11 @@ while [ $# -gt 0 ]; do
 done
 if [ "$SUPABASE_ONLY" -eq 0 ] && { [ -n "$DB_BIND_OPT" ] || [ -n "$DB_PORT_OPT" ] || [ -n "$DB_HOST_OPT" ] || [ "$NETWORK" != sho-supabase ]; }; then
   die "--network, --db-bind, --db-port and --db-host go with --supabase-only."
+fi
+if [ -n "$IMAGE_TAG" ]; then
+  [ "$SUPABASE_ONLY" -eq 0 ] || die "--image-tag is for the app image; --supabase-only installs no app."
+  printf '%s' "$IMAGE_TAG" | grep -Eq '^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$' \
+    || die "--image-tag: letters, digits and . _ - only (for example v1.0.0)."
 fi
 if [ -n "$PROJECT" ]; then
   printf '%s' "$PROJECT" | grep -Eq '^[a-z0-9][a-z0-9_-]{0,62}$' \
@@ -113,6 +123,14 @@ elif [ -z "$SITE" ]; then
   [ "$API_URL" = "http://localhost:8000" ] && SITE="http://localhost:3000"
 fi
 [ -z "$PROJECT" ] || set_env COMPOSE_PROJECT_NAME "$PROJECT"
+if [ -n "$IMAGE_TAG" ]; then
+  # The image's name without its tag, from .env (or the default docker-compose.yml names).
+  CUR_IMAGE="$(sed -n 's/^APP_IMAGE=//p' .env | head -n 1)"
+  [ -n "$CUR_IMAGE" ] || CUR_IMAGE="$(sed -n 's/.*APP_IMAGE:-\(.*\)}.*/\1/p' docker-compose.yml | head -n 1)"
+  [ -n "$CUR_IMAGE" ] || die "cannot tell which app image to pin."
+  IMAGE_LAST="${CUR_IMAGE##*/}"
+  set_env APP_IMAGE "${CUR_IMAGE%"$IMAGE_LAST"}${IMAGE_LAST%%:*}:$IMAGE_TAG"
+fi
 set_env SUPABASE_PUBLIC_URL "$API_URL"
 set_env API_EXTERNAL_URL "$API_URL/auth/v1"
 set_env SITE_URL "$SITE"

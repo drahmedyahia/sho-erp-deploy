@@ -317,6 +317,9 @@ docker network inspect &lt;network&gt; --format '{{range .IPAM.Config}}{{.Gatewa
             autocomplete="off"
           />
           <p class="muted" data-t="acDataHint"></p>
+          <label for="acTag" data-t="tagLabel"></label>
+          <input id="acTag" dir="ltr" placeholder="v1.0.0" autocomplete="off" />
+          <p class="muted" data-t="tagHint"></p>
           <label for="acImage" data-t="acImage"></label>
           <input
             id="acImage"
@@ -417,6 +420,11 @@ docker network inspect &lt;network&gt; --format '{{range .IPAM.Config}}{{.Gatewa
               autocomplete="off"
             />
             <p class="muted" data-t="dataHint"></p>
+          </div>
+          <div data-mode="full">
+            <label for="imageTag" data-t="tagLabel"></label>
+            <input id="imageTag" dir="ltr" placeholder="v1.0.0" autocomplete="off" />
+            <p class="muted" data-t="tagHint"></p>
           </div>
           <div data-mode="full" data-how="compose">
             <label for="image" data-t="image"></label>
@@ -608,6 +616,10 @@ docker network inspect &lt;network&gt; --format '{{range .IPAM.Config}}{{.Gatewa
             projectHint:
               "بادئة أسماء الحاويات والأقراص (مثل <الاسم>-db-1). في Dockge وPortainer يُستعمل الاسم الذي تكتبه للـ stack هناك؛ وفي الطرفية والسكربت يُستعمل هذا. اختره قبل أول تشغيل: تغييره لاحقًا ينشئ مشروعًا جديدًا. حروف صغيرة وأرقام و - _ فقط. فارغ = اسم المجلد (أو sho-erp للسكربت).",
             errProject: "اسم المشروع: حروف إنجليزية صغيرة وأرقام و - _ فقط.",
+            tagLabel: "إصدار التطبيق (فارغ = الأحدث latest)",
+            tagHint:
+              "اكتب رقم إصدار مثل v1.0.0 لتثبّت نسخة بعينها فلا تتغير عند التحديث، أو اتركه فارغًا لتأخذ الأحدث. إن وُجد حقل «صورة التطبيق» أدناه وكتبتَ فيه صورة كاملة فهي التي تُستعمل.",
+            errTag: "الإصدار: حروف إنجليزية وأرقام و . _ - فقط (مثل v1.0.0).",
             fpLabel: "بصمة هذا التوليد:",
             fpWarn:
               "الملفان وبيانات الاتصال أدناه كلها من هذا التوليد. كل ضغطة على «ولّد» تصنع أسرارًا جديدة كليًا، فلا تضغط مرة ثانية بعد أن تأخذ الملفين. للتأكد على الخادم أن ملف .env مطابق: شغّل head -n 1 .env فيجب أن يظهر السطر نفسه بالبصمة أعلاه. وإن اختلفت فالملف من توليد آخر ولن تعمل بيانات الاتصال معه.",
@@ -800,6 +812,10 @@ docker network inspect &lt;network&gt; --format '{{range .IPAM.Config}}{{.Gatewa
             projectHint:
               "The prefix of the container and volume names (like <name>-db-1). Dockge and Portainer use the name you give the stack there; the terminal and the script use this one. Choose it before the first start: changing it later creates a new project. Lower-case letters, digits and - _ only. Empty = the folder name (or sho-erp for the script).",
             errProject: "Project name: lower-case letters, digits and - _ only.",
+            tagLabel: "App version (empty = the newest, latest)",
+            tagHint:
+              'Type a version such as v1.0.0 to pin one release so it does not change when you update, or leave it empty to take the newest. Where there is an "App image" field below, a full image typed there wins over this.',
+            errTag: "Version: letters, digits and . _ - only (for example v1.0.0).",
             fpLabel: "Fingerprint of this generation:",
             fpWarn:
               "The files and the connection details below all come from this generation. Every click on Generate makes entirely new secrets, so do not click again once you have taken the files. To check on the server that your .env matches, run head -n 1 .env: the line must show the same fingerprint as above. If it differs, the file is from another generation and the connection details will not work with it.",
@@ -1210,8 +1226,13 @@ docker network inspect &lt;network&gt; --format '{{range .IPAM.Config}}{{.Gatewa
               $("error").textContent = t.errDir;
               return;
             }
+            var acImg = G.resolveImage($("acImage").value, $("acTag").value);
+            if (acImg.error) {
+              $("error").textContent = t.errTag;
+              return;
+            }
             appFile = {
-              image: $("acImage").value.trim(),
+              image: acImg.image,
               container: acName,
               port: G.cleanPort($("acPort").value, 3000),
               dataDir: acData,
@@ -1228,6 +1249,18 @@ docker network inspect &lt;network&gt; --format '{{range .IPAM.Config}}{{.Gatewa
             $("error").textContent = t.errDir;
             return;
           }
+          var tagRaw = $("imageTag").value.trim();
+          var img = backend
+            ? { image: "" }
+            : compose
+              ? G.resolveImage($("image").value, tagRaw)
+              : tagRaw && !G.cleanImageTag(tagRaw)
+                ? { error: "tag" }
+                : { image: "" };
+          if (img.error) {
+            $("error").textContent = t.errTag;
+            return;
+          }
           var env = "";
           if (compose) {
             try {
@@ -1239,7 +1272,7 @@ docker network inspect &lt;network&gt; --format '{{range .IPAM.Config}}{{.Gatewa
                   apiUrl: apiUrl,
                   appPort: G.cleanPort($("appPort").value, 3000),
                   apiPort: G.cleanPort($("apiPort").value, 8000),
-                  image: backend ? "" : $("image").value.trim(),
+                  image: img.image,
                   adminEmail: backend ? "" : $("email").value.trim(),
                   dataDir: dataDir,
                   project: project,
@@ -1285,6 +1318,7 @@ docker network inspect &lt;network&gt; --format '{{range .IPAM.Config}}{{.Gatewa
             appUrl: appUrl,
             plan: plan,
             project: project,
+            imageTag: !backend && !compose ? G.cleanImageTag(tagRaw) : "",
           });
           if (!compose) {
             var sf = {
